@@ -1,4 +1,4 @@
-import { Button, Wrap, WrapItem, Box, Show, useDisclosure, Collapse, Code } from '@chakra-ui/react'
+import { Button, Wrap, WrapItem, Box, Show, useDisclosure, Collapse, Code, useColorModeValue } from '@chakra-ui/react'
 import { ExternalLinkIcon, ChevronDownIcon, ChevronUpIcon, Icon } from '@chakra-ui/icons'
 import { AiOutlineGithub } from "react-icons/ai"
 import NextLink from 'next/link'
@@ -99,7 +99,7 @@ function renderCitationToggle() {
     </WrapItem>
     </Wrap>
     <Collapse in={isOpen} animateOpacity>
-      <Code p="0.5rem" mb="1rem" borderRadius="5px" overflow="scroll" whiteSpace="normal" backgroundColor={"#f0d1e4"}>  {/*  fontFamily="monospace" */}
+      <Code p="0.5rem" mb="1rem" borderRadius="5px" overflow="scroll" whiteSpace="normal" backgroundColor={useColorModeValue("#f0d1e4", 'brand.500')}>  {/*  fontFamily="monospace" */}
           @inproceedings&#123; <br />
             &nbsp;&nbsp;&nbsp;&nbsp;{citationId}, <br />
             &nbsp;&nbsp;&nbsp;&nbsp;title=&#123;{title}&#125; <br />

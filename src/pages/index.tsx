@@ -17,7 +17,7 @@ import { useColorMode, useColorModePreference } from '@chakra-ui/react'
 import { Tabs, TabList, TabPanels, Tab, TabPanel, TabIndicator } from '@chakra-ui/react'
 
 function renderViewLarger(url: string, description?: string, renderLinkOnly: boolean = false) {
-  const brandSwitch = useColorModeValue('brand.600', 'brand.500')
+  const brandSwitch = useColorModeValue('brand.600', 'white')
 
   return renderLinkOnly ? (
     <>
@@ -50,7 +50,7 @@ const Index = () => (
       <Title />
       {/* <Authors /> */}
       <Box fontFamily={"IBM Plex Sans"}>{ authors.map((author, idx) => 
-          <Box display={'inline'}><Link href={author.url} color={useColorModeValue('brand.600', 'brand.500')} fontWeight="600" target="_blank">{author.name}</Link><span>{idx === authors.length - 1 ? "" : " | "}</span></Box>
+          <Box display={'inline'}><Link href={author.url} color={useColorModeValue('brand.600', 'white')} fontWeight="600" target="_blank">{author.name}</Link><span>{idx === authors.length - 1 ? "" : " | "}</span></Box>
         ) }</Box>
       <Text fontFamily={"IBM Plex Sans"}fontSize="sm" color={useColorModeValue('gray.600', 'gray.300')}>Visual Geometry Group, University of Oxford</Text>
 
@@ -175,7 +175,7 @@ const Index = () => (
           <Tab><Box backgroundImage={`${process.env.BASE_PATH || ""}images/photo-1572252009286-268acec5ca0a.jpeg`} width="64px" height="64px" backgroundSize={"cover"} /></Tab>
           <Tab><Box backgroundImage={`${process.env.BASE_PATH || ""}images/photo-1546975490-e8b92a360b24.jpeg`} width="64px" height="64px" backgroundSize={"cover"} /></Tab>
         </TabList>
-        <TabIndicator height='4px' bg={useColorModeValue('brand.600', 'brand.500')} borderRadius='8px'/>
+        <TabIndicator height='4px' bg={useColorModeValue('brand.600', 'white')} borderRadius='8px'/>
       </Tabs>
 
       <ArticleHeading>Evaluating Scene Geometry</ArticleHeading>
