@@ -194,7 +194,7 @@ const Index = () => (
       </Box>
 
       <Text pt="1rem">
-        In both, a real-world and a photorealistic setting, our inpainting model produces predictions that are more faithful to the ground-truth than the other methods.
+        In both, a real-world and a photorealistic setting, our inpainting model produces predictions that are more faithful to the ground-truth than prior methods.
       </Text>
 
       {/* Abstract */}
