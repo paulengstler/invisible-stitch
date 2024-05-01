@@ -40,7 +40,7 @@ export const author_tags = [
 
 // Links
 export const links = {
-  'paper': "#",
+  'paper': "https://arxiv.org/abs/2404.19758",
   'github': "https://github.com/paulengstler/invisible-stitch",
   'demo': 'https://huggingface.co/spaces/paulengstler/invisible-stitch',
 }
