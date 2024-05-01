@@ -1,6 +1,6 @@
 # Invisible Stitch: Generating Smooth 3D Scenes with Depth Inpainting
 Paul Engstler, Andrea Vedaldi, Iro Laina, Christian Rupprecht<br>
-[Project Page](https://research.paulengstler.com/invisible-stitch) | [🤗 Demo](https://huggingface.co/spaces/paulengstler/invisible-stitch) | [Paper](#)<br>
+[Project Page](https://research.paulengstler.com/invisible-stitch) | [🤗 Demo](https://huggingface.co/spaces/paulengstler/invisible-stitch) | [Paper](https://arxiv.org/abs/2404.19758)<br>
 
 ![Method figure](.github/paper_projection_figure_stacked.jpg)
 
