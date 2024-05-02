@@ -17,7 +17,7 @@ from pytorch3d.utils import opencv_from_cameras_projection
 from utils.ops import focal2fov, fov2focal
 from utils.models import infer_with_zoe_dc
 from utils.gs import gs_options, read_cameras_from_optimization_bundle, Scene, run_gaussian_splatting, get_blank_gs_bundle
-from scene import GaussianModel
+from utils.scene import GaussianModel
 from utils.demo import downsample_point_cloud
 from typing import Iterable, Tuple, Dict, Optional, Literal
 import itertools
@@ -166,7 +166,7 @@ def supplement_point_cloud(optimization_bundle: Dict, point_cloud: Pointclouds, 
 
     return optimization_bundle, point_cloud
 
-def generate_scene(image: str, prompt: str, output_path: str = "output.ply", mode: Literal["single", "stage", "360"] = "stage", seed: int = 0):
+def generate_scene(image: str, prompt: str, output_path: str = "./output.ply", mode: Literal["single", "stage", "360"] = "stage", seed: int = 0):
     global device
     if torch.cuda.is_available():
         device = torch.device("cuda:0")
@@ -181,7 +181,7 @@ def generate_scene(image: str, prompt: str, output_path: str = "output.ply", mod
     zoe_dc_model = get_zoe_dc_model(ckpt_path=hf_hub_download(repo_id="paulengstler/invisible-stitch", filename="invisible-stitch.pt")).to(device)
 
     global pipe
-    pipe = get_sd_pipeline().to(device)
+    pipe = get_sd_pipeline(device)
 
     img = Image.open(image).convert("RGB")
 

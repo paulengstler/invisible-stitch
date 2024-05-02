@@ -22,9 +22,9 @@ tqdm
 trimesh
 wandb
 xformers
-timm
+timm==0.6.7
 transformers
 accelerate
 easydict
-submodules/diff-gaussian-rasterization
-submodules/simple-knn
+utils/submodules/diff-gaussian-rasterization
+utils/submodules/simple-knn

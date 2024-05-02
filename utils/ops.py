@@ -39,7 +39,7 @@ def snap_high_gradients_to_nn(depth, threshold=20):
     grad_depth = grad_depth / grad_depth.max()
 
     grad = skimage.filters.rank.gradient(grad_depth, skimage.morphology.disk(1))
-    return nearest_neighbor_fill(depth, torch.from_numpy(grad < threshold).to("cuda"), erosion=3)
+    return nearest_neighbor_fill(depth, torch.from_numpy(grad < threshold).to(depth.device), erosion=3)
 
 def project_points(cameras, depth, use_pixel_centers=True):
     if len(cameras) > 1:

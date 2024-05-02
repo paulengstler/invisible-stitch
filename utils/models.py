@@ -106,14 +106,14 @@ def infer_with_zoe_dc(zoe_dc, image, sparse_depth, scaling: float = 1):
 
     return torch.nn.functional.interpolate(pred_depth, image.shape[-2:], mode='bilinear', align_corners=True)[0, 0]
 
-def get_sd_pipeline():
+def get_sd_pipeline(device):
     pipe = StableDiffusionInpaintPipeline.from_pretrained(
         "stabilityai/stable-diffusion-2-inpainting",
-        torch_dtype=torch.float16,
-    )
+        torch_dtype=torch.float16 if device!=torch.device("cpu") else torch.float32,
+    ).to(device)
     pipe.vae = AsymmetricAutoencoderKL.from_pretrained(
-        "cross-attention/asymmetric-autoencoder-kl-x-2", 
-        torch_dtype=torch.float16
-    )
+        "cross-attention/asymmetric-autoencoder-kl-x-2",
+        torch_dtype=torch.float16 if device!=torch.device("cpu") else torch.float32
+    ).to(device)
 
     return pipe

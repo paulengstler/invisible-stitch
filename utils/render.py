@@ -1,7 +1,6 @@
 import torch
 import skimage
 from pytorch3d.structures import Pointclouds
-from pytorch3d.vis.plotly_vis import AxisArgs, plot_batch_individually, plot_scene
 from pytorch3d.renderer import (
     look_at_view_transform,
     FoVOrthographicCameras, 

@@ -222,7 +222,7 @@ if __name__ == "__main__":
     zoe_dc_model = get_zoe_dc_model(ckpt_path=hf_hub_download(repo_id="paulengstler/invisible-stitch", filename="invisible-stitch.pt")).to(device)
 
     global pipe
-    pipe = get_sd_pipeline().to(device)
+    pipe = get_sd_pipeline(device)
 
     demo = gr.Interface(
         fn=generate_scene,
