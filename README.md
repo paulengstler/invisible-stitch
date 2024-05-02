@@ -37,7 +37,7 @@ To generate a 3D scene, invoke the `run.py` script:
 python3 run.py \
   --image "examples/photo-1667788000333-4e36f948de9a.jpeg" \
   --prompt "a street with traditional buildings in Kyoto, Japan" \
-  --output_path "output.ply" \
+  --output_path "./output.ply" \
   --mode "stage"
 ```
 
@@ -87,6 +87,6 @@ Consider using the `_latest.pt` as opposed to the `_best.pt` checkpoint.
 
 ## Acknowledgments
 
-P. E., A. V., I. L., and C.R. are supported by ERC-UNION- CoG-101001212. P.E. is also supported by Meta Research. I.L. and C.R. also receive support from VisualAI EP/T028572/1.
+P. E., A. V., I. L., and C.R. are supported by ERC-UNION-CoG-101001212. P.E. is also supported by Meta Research. I.L. and C.R. also receive support from VisualAI EP/T028572/1.
 
 Without the great works from previous researchers, this project would not have been possible. Thank you! Our code for the depth completion network heavily borrows from [ZoeDepth](https://github.com/isl-org/ZoeDepth). We utilize [PyTorch3D](https://pytorch3d.org) in our 3D scene generation pipeline.
