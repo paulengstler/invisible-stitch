@@ -6,8 +6,8 @@ channels:
 dependencies:
   - cuda=12.1
   - h5py=3.11.0
-  - matplotlib=3.7.5
-  - matplotlib-base=3.7.5
+  - matplotlib=3.8.4
+  - matplotlib-base=3.8.4
   - numpy=1.26.4
   - pip=22.3.1
   - python=3.10
