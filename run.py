@@ -191,7 +191,7 @@ def generate_scene(image: str, prompt: str, output_path: str = "./output.ply", m
     pbar = tqdm(total=3)
     pbar.set_description("Hallucinating Scene")
 
-    gs_optimization_bundle, point_cloud = generate_point_cloud(img, prompt, mode=mode, seed=seed)
+    gs_optimization_bundle, point_cloud = generate_point_cloud(img, prompt, mode=str(mode), seed=seed)
 
     pbar.update(1)
     pbar.set_description("Generating Additional Views")

@@ -45,7 +45,9 @@ For the parameter `mode`, you may provide one of the following arguments:
 
 * `single`: Simple depth projection of the input image (no hallucation)
 * `stage`: Single-step hallucination of the scene to the left and right of the input image
-* `360`: Full 360-degree hallucination around the given input image 
+* `360`: Full 360-degree hallucination around the given input image
+
+To run a 360-degree hallucination, it is recommened to use a GPU with at least 16 GB VRAM.
 
 ## Training
 
