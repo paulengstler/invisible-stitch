@@ -53,7 +53,7 @@ To run a 360-degree hallucination, it is recommened to use a GPU with at least 1
 
 ### Dataset Setup
 
-To train the depth completion network from a fine-tuned ZoeDepth model, we need to generate some data first. First, we predict depth for [NYU Depth v2](https://cs.nyu.edu/~fergus/datasets/nyu_depth_v2.html) with [Marigold](https://github.com/prs-eth/Marigold). Second, we use Marigold again to predict the depth for [Places365](http://places.csail.mit.edu). Third, we use the depth maps for Places365 to generate inpainting masks.
+To train the depth completion network from a fine-tuned ZoeDepth model, we need to generate some data first. First, we predict depth for [NYU Depth v2](https://cs.nyu.edu/~fergus/datasets/nyu_depth_v2.html) with [Marigold](https://github.com/prs-eth/Marigold). Second, we use Marigold again to predict the depth for [Places365](http://places2.csail.mit.edu/) (original). Third, we use the depth maps for Places365 to generate inpainting masks.
 
 Places365 can be used as-is. For NYU Depth v2, please follow the instructions [here](https://github.com/cleinc/bts/tree/master/pytorch#nyu-depvh-v2) to download the split that we use. It is the same one used for ZoeDepth. We also need the official splits for NYU Depth v2:
 
