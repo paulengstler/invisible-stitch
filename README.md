@@ -20,7 +20,7 @@ Please pull this repository recursively to obtain the required submodules.
 git clone --recursive https://github.com/paulengstler/invisible-stitch.git
 ```
 
-Use `environment.yml` file to create a Conda environment with all requirements for this project.
+Use the `environment.yml` file to create a Conda environment with all requirements for this project.
 
 ```
 conda env create -n invisible_stitch --file environment.yml
@@ -55,7 +55,7 @@ To run a 360-degree hallucination, it is recommened to use a GPU with at least 1
 
 To train the depth completion network from a fine-tuned ZoeDepth model, we need to generate some data first. First, we predict depth for [NYU Depth v2](https://cs.nyu.edu/~fergus/datasets/nyu_depth_v2.html) with [Marigold](https://github.com/prs-eth/Marigold). Second, we use Marigold again to predict the depth for [Places365](http://places2.csail.mit.edu/) (original). Third, we use the depth maps for Places365 to generate inpainting masks.
 
-Places365 can be used as-is. For NYU Depth v2, please follow the instructions [here](https://github.com/cleinc/bts/tree/master/pytorch#nyu-depvh-v2) to download the split that we use. It is the same one used for ZoeDepth. We also need the official splits for NYU Depth v2:
+Places365 can be used as-is. For NYU Depth v2, please follow the instructions [here](https://github.com/cleinc/bts/tree/master/pytorch#nyu-depvh-v2) to obtain the `sync` folder. We also need the official splits for NYU Depth v2, which can be extracted with the script `extract_official_train_test_set_from_mat.py` provided [here](https://github.com/wl-zhao/VPD/blob/main/depth/extract_official_train_test_set_from_mat.py):
 
 ```shell
 wget http://horatio.cs.nyu.edu/mit/silberman/nyu_depth_v2/nyu_depth_v2_labeled.mat
