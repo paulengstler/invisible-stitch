@@ -15,11 +15,6 @@ Abstract: *3D scene generation has quickly become a challenging new research dir
 - [ ] Benchmark
 
 ## Getting Started
-Please pull this repository recursively to obtain the required submodules.
-```
-git clone --recursive https://github.com/paulengstler/invisible-stitch.git
-```
-
 Use the `environment.yml` file to create a Conda environment with all requirements for this project.
 
 ```
