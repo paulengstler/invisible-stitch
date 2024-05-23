@@ -26,5 +26,3 @@ timm==0.6.7
 transformers
 accelerate
 easydict
-utils/submodules/diff-gaussian-rasterization
-utils/submodules/simple-knn

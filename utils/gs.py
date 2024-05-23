@@ -9,7 +9,50 @@ from .scene.gaussian_model import BasicPointCloud
 from easydict import EasyDict as edict
 from PIL import Image
 
+from gsplat.sh import num_sh_bases, spherical_harmonics
+from gsplat import project_gaussians, rasterize_gaussians
+
 from tqdm.auto import tqdm
+from torch import Tensor
+
+# All credit for this function goes to the nerfstudio project
+# nerfstudio/cameras/lie_groups.py
+def exp_map_SO3xR3(tangent_vector):
+    """Compute the exponential map of the direct product group `SO(3) x R^3`.
+
+    This can be used for learning pose deltas on SE(3), and is generally faster than `exp_map_SE3`.
+
+    Args:
+        tangent_vector: Tangent vector; length-3 translations, followed by an `so(3)` tangent vector.
+    Returns:
+        [R|t] transformation matrices.
+    """
+    # code for SO3 map grabbed from pytorch3d and stripped down to bare-bones
+    log_rot = tangent_vector[:, 3:]
+    nrms = (log_rot * log_rot).sum(1)
+    rot_angles = torch.clamp(nrms, 1e-4).sqrt()
+    rot_angles_inv = 1.0 / rot_angles
+    fac1 = rot_angles_inv * rot_angles.sin()
+    fac2 = rot_angles_inv * rot_angles_inv * (1.0 - rot_angles.cos())
+    skews = torch.zeros((log_rot.shape[0], 3, 3), dtype=log_rot.dtype, device=log_rot.device)
+    skews[:, 0, 1] = -log_rot[:, 2]
+    skews[:, 0, 2] = log_rot[:, 1]
+    skews[:, 1, 0] = log_rot[:, 2]
+    skews[:, 1, 2] = -log_rot[:, 0]
+    skews[:, 2, 0] = -log_rot[:, 1]
+    skews[:, 2, 1] = log_rot[:, 0]
+    skews_square = torch.bmm(skews, skews)
+
+    ret = torch.zeros(tangent_vector.shape[0], 4, 3, dtype=tangent_vector.dtype, device=tangent_vector.device)
+    ret[:, :3, :3] = (
+        fac1[:, None, None] * skews
+        + fac2[:, None, None] * skews_square
+        + torch.eye(3, dtype=log_rot.dtype, device=log_rot.device)[None]
+    )
+
+    # Compute the translation
+    ret[:, 3, :3] = tangent_vector[:, :3]
+    return ret
 
 def get_blank_gs_bundle(h, w):
     return {
@@ -104,36 +147,83 @@ def run_gaussian_splatting(scene, gs_optimization_bundle):
 
     scene.gaussians._opacity = torch.ones_like(scene.gaussians._opacity)
 
-    # NOTE: This is a temporary "fix", sorry. With this loop, the resulting Gaussian splatting scenes
-    #       appear very fuzzy. Once time permits, I will update this loop with a nerfstudio/gsplat
-    #       implementation that optimizes the cameras, leading to a notably sharper result.
-
-    return scene
-
     from random import randint
-    from .gaussian_renderer import render as gs_render
     from .scene.utils.loss_utils import l1_loss, ssim
+
+    pose_adjustments = torch.nn.Parameter(torch.zeros((len(scene.getTrainCameras()), 6), device=scene.getTrainCameras()[0].world_view_transform.device), requires_grad=True)
+    pose_optimizer = torch.optim.Adam([pose_adjustments], lr=1e-4)
 
     pbar = tqdm(range(1, gs_options.iterations + 1))
     for iteration in pbar:
         scene.gaussians.update_learning_rate(iteration)
 
-        # Every 1000 its we increase the levels of SH up to a maximum degree
-        if iteration % 1000 == 0:
-            scene.gaussians.oneupSHdegree()
-
         # Pick a random Camera
         random_idx = randint(0, len(gs_optimization_bundle["frames"])-1)
-        viewpoint_cam = scene.getTrainCameras()[random_idx]
+        viewpoint_cam = scene.getTrainCameras()[random_idx] # FIXME
 
-        # Render
-        render_pkg = gs_render(viewpoint_cam, scene.gaussians, gs_options, scene.background)
-        image, viewspace_point_tensor, visibility_filter, radii = (
-            render_pkg['render'], render_pkg['viewspace_points'], render_pkg['visibility_filter'], render_pkg['radii'])
+        adj = exp_map_SO3xR3(pose_adjustments[random_idx, :][None, :])
+        adj = torch.cat([adj, torch.Tensor([0, 0, 0, 1])[None, :, None].to(adj)], dim=2)
+        w2v = torch.bmm(viewpoint_cam.world_view_transform[None, ...], adj)[0]
+
+        R = w2v[:3, :3]  # 3 x 3
+        T = w2v[3, :3].view(3, 1)  # 3 x 1
+
+        viewmat = torch.eye(4, device=R.device, dtype=R.dtype)
+        viewmat[:3, :3] = R
+        viewmat[:3, 3:4] = T
+        H, W = viewpoint_cam.original_image.shape[1:]
+
+        cx = W / 2
+        cy = H / 2
+        fx = fov2focal(viewpoint_cam.FoVx, W)
+        fy = fov2focal(viewpoint_cam.FoVy, H)
+
+        colors = torch.cat((scene.gaussians._features_dc, scene.gaussians._features_rest), dim=1)
+        BLOCK_WIDTH = 16
+        xys, depths, radii, conics, comp, num_tiles_hit, cov3d = project_gaussians(  # type: ignore
+            scene.gaussians._xyz,
+            torch.exp(scene.gaussians._scaling),
+            1,
+            scene.gaussians._rotation / scene.gaussians._rotation.norm(dim=-1, keepdim=True),
+            viewmat.squeeze()[:3, :],
+            fx,
+            fy,
+            cx,
+            cy,
+            H,
+            W,
+            BLOCK_WIDTH,
+        )
+
+        #xys.retain_grad()
+
+        viewdirs = scene.gaussians._xyz.detach() - viewpoint_cam.world_view_transform[3, :3]  # (N, 3)
+        viewdirs = viewdirs / viewdirs.norm(dim=-1, keepdim=True)
+        rgbs = spherical_harmonics(gs_options.sh_degree, viewdirs, colors)
+        rgbs = torch.clamp(rgbs + 0.5, min=0.0)  # type: ignore
+
+        opacities = torch.sigmoid(scene.gaussians._opacity) * comp[:, None]
+
+        rgb, alpha = rasterize_gaussians(  # type: ignore
+            xys,
+            depths,
+            radii,
+            conics,
+            num_tiles_hit,  # type: ignore
+            rgbs,
+            opacities,
+            H,
+            W,
+            BLOCK_WIDTH,
+            background=torch.zeros(3, device=R.device),
+            return_alpha=True,
+        )  # type: ignore
+        rgb = torch.clamp(rgb, max=1.0)
 
         # Loss
         gt_image = viewpoint_cam.original_image.cuda()
-        Ll1 = l1_loss(image, gt_image, reduce=False)
+
+        Ll1 = l1_loss(rgb.permute(2, 0, 1), gt_image, reduce=False)
         loss = (1.0 - gs_options.lambda_dssim) * Ll1
 
         if viewpoint_cam.mask is not None:
@@ -142,33 +232,17 @@ def run_gaussian_splatting(scene, gs_optimization_bundle):
             mask = 1
 
         loss = (loss * mask).mean()
-        loss = loss + gs_options.lambda_dssim * (1.0 - ssim(image, gt_image))
+        loss = loss + gs_options.lambda_dssim * (1.0 - ssim(rgb.permute(2, 0, 1), gt_image))
         loss.backward()
 
         pbar.set_description(f"Loss: {loss.item():.4f}")
 
-        with torch.no_grad():
-            # Densification
-            if iteration < gs_options.densify_until_iter:
-                # Keep track of max radii in image-space for pruning
-                scene.gaussians.max_radii2D[visibility_filter] = torch.max(
-                    scene.gaussians.max_radii2D[visibility_filter], radii[visibility_filter])
-                scene.gaussians.add_densification_stats(viewspace_point_tensor, visibility_filter)
+        # Optimizer step
+        scene.gaussians.optimizer.step()
+        scene.gaussians.optimizer.zero_grad(set_to_none=True)
 
-                if iteration > gs_options.densify_from_iter and iteration % gs_options.densification_interval == 0:
-                    size_threshold = 20 if iteration > gs_options.opacity_reset_interval else None
-                    scene.gaussians.densify_and_prune(
-                        gs_options.densify_grad_threshold, 0.005, scene.cameras_extent, size_threshold)
-                
-                if (iteration % gs_options.opacity_reset_interval == 0 
-                    or (gs_options.white_background and iteration == gs_options.densify_from_iter)
-                ):
-                    scene.gaussians.reset_opacity()
-
-            # Optimizer step
-            if iteration < gs_options.iterations:
-                scene.gaussians.optimizer.step()
-                scene.gaussians.optimizer.zero_grad(set_to_none = True)
+        pose_optimizer.step()
+        pose_optimizer.zero_grad(set_to_none=True)
 
     return scene
 
@@ -180,15 +254,15 @@ gs_options = edict({
     "data_device": "cuda",
     "eval": False,
     "use_depth": False,
-    "iterations": 0,#250,
-    "position_lr_init": 0.00016,
-    "position_lr_final": 0.0000016,
+    "iterations": 990,
+    "position_lr_init": 1.6e-12,
+    "position_lr_final": 1.6e-12,
     "position_lr_delay_mult": 0.01,
     "position_lr_max_steps": 2990,
-    "feature_lr": 0.0,#0.0025,
-    "opacity_lr": 0.0,#0.05,
-    "scaling_lr": 0.0,#0.005,
-    "rotation_lr": 0.0,#0.001,
+    "feature_lr": 0.0025,
+    "opacity_lr": 0.05,
+    "scaling_lr": 0.005,
+    "rotation_lr": 0.001,
     "percent_dense": 0.01,
     "lambda_dssim": 0.2,
     "densification_interval": 100,

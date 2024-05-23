@@ -196,8 +196,7 @@ def generate_scene(img: Image.Image, prompt: str):
 
     scene = Scene(gs_optimization_bundle, GaussianModel(gs_options.sh_degree), gs_options)
 
-    scene.gaussians._opacity = torch.ones_like(scene.gaussians._opacity)
-    #scene = run_gaussian_splatting(scene, gs_optimization_bundle)
+    scene = run_gaussian_splatting(scene, gs_optimization_bundle)
 
     # coordinate system transformation
     scene.gaussians._xyz = scene.gaussians._xyz.detach()

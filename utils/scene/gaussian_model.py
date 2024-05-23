@@ -17,9 +17,19 @@ import os
 from .utils.system_utils import mkdir_p
 from plyfile import PlyData, PlyElement
 from .utils.sh_utils import RGB2SH
-from simple_knn._C import distCUDA2
 from .utils.graphics_utils import BasicPointCloud
 from .utils.general_utils import strip_symmetric, build_scaling_rotation
+
+from scipy.spatial import KDTree
+import torch
+
+# credits to https://github.com/graphdeco-inria/gaussian-splatting/issues/292#issuecomment-2007934451
+def distCUDA2(points):
+    points_np = points.detach().cpu().float().numpy()
+    dists, inds = KDTree(points_np).query(points_np, k=4)
+    meanDists = (dists[:, 1:] ** 2).mean(1)
+
+    return torch.tensor(meanDists, dtype=points.dtype, device=points.device)
 
 class GaussianModel:
 

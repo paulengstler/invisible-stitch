@@ -10,7 +10,7 @@ Abstract: *3D scene generation has quickly become a challenging new research dir
 
 ## Release Roadmap
 - [x] Inference
-- [ ] High-Quality Gaussian Splatting Results (see `gs.py:102`)
+- [x] High-Quality Gaussian Splatting Results
 - [x] Training
 - [ ] Benchmark
 
