@@ -12,7 +12,7 @@ Abstract: *3D scene generation has quickly become a challenging new research dir
 - [x] Inference
 - [x] High-Quality Gaussian Splatting Results
 - [x] Training
-- [ ] Benchmark
+- [x] Benchmark
 
 ## Getting Started
 Use the `environment.yml` file to create a Conda environment with all requirements for this project.
@@ -70,6 +70,75 @@ python3 train.py -m zoedepth -d marigold_nyu \
 ```
 
 Consider using the `_latest.pt` as opposed to the `_best.pt` checkpoint.
+
+## Benchmark
+
+Our scene geometry evaluation benchmark is an approach to quantitatively compare the consistency of generated scenes. In this section, we describe how to obtain and process the datasets we used, and how to run the evaluation itself.
+
+In this short write-up, the datasets will be placed in a `datasets` folder at the root of this repository. However, this path can be adapted easily.
+
+### ScanNet
+
+Obtain [ScanNet](http://www.scan-net.org) and place it into `datasets/ScanNet`. Clone the ScanNet repository to obtain the library to read the sensor data, and then run our small script to extract the individual image, depth, pose, and intrinsics files.
+
+```
+git clone https://github.com/ScanNet/ScanNet
+python3 benchmark/scannet_process.py ./datasets/ScanNet --input_dir ./datasets/ScanNet/scans
+```
+
+### Hypersim
+
+Download [Hypersim](https://github.com/apple/ml-hypersim) into `datasets/hypersim`. We additionally need the camera parameters for each scene.
+
+```bash
+wget https://raw.githubusercontent.com/apple/ml-hypersim/main/contrib/mikeroberts3000/metadata_camera_parameters.csv -P datasets/hypersim/
+```
+
+Then, we find image pairs with a high overlap that we will evaluate on:
+
+```
+python3 hypersim_pair_builder.py --hypersim_dir ./datasets/hypersim
+```
+
+If you have access to a cluster running SLURM, you can submit a job similar to the following (you probably need to adapt `constraint` and `partition`).
+
+```bash
+#!/bin/bash
+
+# Parameters
+#SBATCH --array=0-100%20
+#SBATCH --constraint=p40
+#SBATCH --cpus-per-task=4
+#SBATCH --gpus-per-node=1
+#SBATCH --job-name=hypersim
+#SBATCH --mem=16GB
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --open-mode=append
+#SBATCH --partition=low-prio-gpu
+#SBATCH --requeue
+
+python3 hypersim_pair_builder.py --hypersim_dir ./datasets/hypersim --scene_idx ${SLURM_ARRAY_TASK_ID}
+```
+
+### Running the Evaluation
+
+Once you have finished setting up both datasets, the evaluation may be run for each dataset.
+
+
+The ScanNet evaluation script will test on the first 50 scenes and print the mean absolute error across these scenes.
+```
+python3 scannet_eval.py 
+```
+
+The Hypersim evaluation script will consider all image pairs that were previously computed and generate the errors for each scene as csv files. We then concatenate them and also calculate the mean absolute error.
+
+```
+python3 hypersim_eval.py --out_dir ./datasets/hypersim/results_invisible_stitch
+python3 hypersim_concat_eval.py ./datasets/hypersim/results_invisible_stitch
+```
+
+Adapting these scripts to your own model is straight forward: In `scannet_eval.py`, add a new mode for your model (see lines `372-384`). In `hypersim_eval.py`, duplicate the error computation for an existing model and adapt it to your own (see lines `411-441`).
 
 ## Citation
 ```
